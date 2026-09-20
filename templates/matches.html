@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Possible Matches - Lost & Found Portal</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>🔗 Possible Matches</h1>
+
+    <p>Found items that may match your lost items</p>
+
+</header>
+
+
+<main>
+
+    {% if matches %}
+
+        <div class="card-container">
+
+            {% for match in matches %}
+
+                <div class="card">
+
+                    <h2>🔎 Possible Match</h2>
+
+
+                    <!-- LOST ITEM -->
+
+                    <h3>📍 Your Lost Item</h3>
+
+                    {% if match.lost["photo"] %}
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='uploads/' + match.lost['photo']
+                            ) }}"
+                            alt="Lost item"
+                            style="
+                                width: 100%;
+                                max-width: 300px;
+                                height: 180px;
+                                object-fit: cover;
+                                border-radius: 10px;
+                            "
+                        >
+
+                    {% endif %}
+
+                    <p>
+                        <strong>Item:</strong>
+                        {{ match.lost["item_name"] }}
+                    </p>
+
+                    <p>
+                        <strong>Category:</strong>
+                        {{ match.lost["category"] }}
+                    </p>
+
+                    <p>
+                        <strong>Location:</strong>
+                        {{ match.lost["location"] }}
+                    </p>
+
+                    <p>
+                        <strong>Date Lost:</strong>
+                        {{ match.lost["date_lost"] }}
+                    </p>
+
+
+                    <hr>
+
+
+                    <!-- FOUND ITEM -->
+
+                    <h3>📦 Found Item</h3>
+
+                    {% if match.found["photo"] %}
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='uploads/' + match.found['photo']
+                            ) }}"
+                            alt="Found item"
+                            style="
+                                width: 100%;
+                                max-width: 300px;
+                                height: 180px;
+                                object-fit: cover;
+                                border-radius: 10px;
+                            "
+                        >
+
+                    {% endif %}
+
+                    <p>
+                        <strong>Item:</strong>
+                        {{ match.found["item_name"] }}
+                    </p>
+
+                    <p>
+                        <strong>Category:</strong>
+                        {{ match.found["category"] }}
+                    </p>
+
+                    <p>
+                        <strong>Location:</strong>
+                        {{ match.found["location"] }}
+                    </p>
+
+                    <p>
+                        <strong>Date Found:</strong>
+                        {{ match.found["date_found"] }}
+                    </p>
+
+                    <p>
+                        <strong>Contact:</strong>
+                        {{ match.found["contact"] }}
+                    </p>
+
+
+                    <div style="margin-top: 15px;">
+
+                        <strong>
+                            ⚠️ This is only a possible match.
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="card">
+
+            <h2>🔍 No Matches Found</h2>
+
+            <p>
+                No possible matches were found for your
+                reported lost items yet.
+            </p>
+
+            <p>
+                You can check again later when someone
+                reports a found item.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    <div style="
+        text-align: center;
+        margin-top: 30px;
+    ">
+
+        <a href="{{ url_for('dashboard') }}">
+
+            <button type="button">
+                ← Back to Dashboard
+            </button>
+
+        </a>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Lost Items - Lost & Found Portal</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>📍 Lost Items</h1>
+
+    <p>Items reported as lost</p>
+
+</header>
+
+
+<main>
+
+    <div class="card-container">
+
+        {% for item in items %}
+
+        <div class="card">
+
+            {% if item["photo"] %}
+
+                <img
+                    src="{{ url_for('static', filename='uploads/' + item['photo']) }}"
+                    alt="Lost item photo"
+                    style="width: 100%; max-width: 300px; height: 200px; object-fit: cover; border-radius: 10px;"
+                >
+
+            {% else %}
+
+                <div style="
+                    width: 100%;
+                    max-width: 300px;
+                    height: 200px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: #f1f1f1;
+                    border-radius: 10px;
+                    margin-bottom: 15px;
+                ">
+
+                    📷 No Photo
+
+                </div>
+
+            {% endif %}
+
+
+            <h2>
+                {{ item["item_name"] }}
+            </h2>
+
+            <p>
+                <strong>Category:</strong>
+                {{ item["category"] }}
+            </p>
+
+            <p>
+                <strong>Description:</strong>
+                {{ item["description"] }}
+            </p>
+
+            <p>
+                <strong>Location:</strong>
+                {{ item["location"] }}
+            </p>
+
+            <p>
+                <strong>Date Lost:</strong>
+                {{ item["date_lost"] }}
+            </p>
+
+            <p>
+                <strong>Contact:</strong>
+                {{ item["contact"] }}
+            </p>
+
+        </div>
+
+        {% else %}
+
+        <div class="card">
+
+            <h2>No Lost Items</h2>
+
+            <p>
+                There are currently no lost item reports.
+            </p>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    <div style="text-align: center; margin-top: 30px;">
+
+        <a href="{{ url_for('dashboard') }}">
+
+            <button type="button">
+                ← Back to Dashboard
+            </button>
+
+        </a>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

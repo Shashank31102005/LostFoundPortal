@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Edit Found Item</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>✏️ Edit Found Item</h1>
+
+    <p>Update your found item report</p>
+
+</header>
+
+<main>
+
+    <div class="card">
+
+        <form method="POST">
+
+            <label>Item Name</label>
+
+            <input
+                type="text"
+                name="item_name"
+                value="{{ item['item_name'] }}"
+                required
+            >
+
+            <label>Category</label>
+
+            <select name="category" required>
+
+                <option value="Mobile Phone"
+                    {% if item['category'] == 'Mobile Phone' %}selected{% endif %}>
+                    Mobile Phone
+                </option>
+
+                <option value="Wallet"
+                    {% if item['category'] == 'Wallet' %}selected{% endif %}>
+                    Wallet
+                </option>
+
+                <option value="ID Card"
+                    {% if item['category'] == 'ID Card' %}selected{% endif %}>
+                    ID Card
+                </option>
+
+                <option value="Bag"
+                    {% if item['category'] == 'Bag' %}selected{% endif %}>
+                    Bag
+                </option>
+
+                <option value="Books"
+                    {% if item['category'] == 'Books' %}selected{% endif %}>
+                    Books
+                </option>
+
+                <option value="Keys"
+                    {% if item['category'] == 'Keys' %}selected{% endif %}>
+                    Keys
+                </option>
+
+                <option value="Other"
+                    {% if item['category'] == 'Other' %}selected{% endif %}>
+                    Other
+                </option>
+
+            </select>
+
+            <label>Description</label>
+
+            <textarea
+                name="description"
+                rows="4"
+            >{{ item['description'] }}</textarea>
+
+            <label>Found Location</label>
+
+            <input
+                type="text"
+                name="location"
+                value="{{ item['location'] }}"
+                required
+            >
+
+            <label>Date Found</label>
+
+            <input
+                type="date"
+                name="date_found"
+                value="{{ item['date_found'] }}"
+                required
+            >
+
+            <label>Contact</label>
+
+            <input
+                type="text"
+                name="contact"
+                value="{{ item['contact'] }}"
+                required
+            >
+
+            <button type="submit">
+                💾 Save Changes
+            </button>
+
+        </form>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

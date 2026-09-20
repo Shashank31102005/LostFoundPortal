@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Search Items</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<header>
+    <h1>🔍 Search Lost & Found</h1>
+    <p>Find items reported by users</p>
+</header>
+
+<main>
+
+    <form method="GET" action="{{ url_for('search') }}">
+
+        <input
+            type="text"
+            name="q"
+            value="{{ query }}"
+            placeholder="Search item, category or location..."
+            required>
+
+        <button type="submit">
+            Search
+        </button>
+
+    </form>
+
+
+    {% if query %}
+
+        <h2>Search Results for "{{ query }}"</h2>
+
+        <h3>🔎 Lost Items</h3>
+
+        <div class="card-container">
+
+            {% for item in lost_items %}
+
+            <div class="card">
+
+                <h2>{{ item["item_name"] }}</h2>
+
+                <p>
+                    Category: {{ item["category"] }}
+                </p>
+
+                <p>
+                    Location: {{ item["location"] }}
+                </p>
+
+                <p>
+                    Date Lost: {{ item["date_lost"] }}
+                </p>
+
+            </div>
+
+            {% else %}
+
+            <p>No matching lost items.</p>
+
+            {% endfor %}
+
+        </div>
+
+
+        <h3>📦 Found Items</h3>
+
+        <div class="card-container">
+
+            {% for item in found_items %}
+
+            <div class="card">
+
+                <h2>{{ item["item_name"] }}</h2>
+
+                <p>
+                    Category: {{ item["category"] }}
+                </p>
+
+                <p>
+                    Location: {{ item["location"] }}
+                </p>
+
+                <p>
+                    Date Found: {{ item["date_found"] }}
+                </p>
+
+            </div>
+
+            {% else %}
+
+            <p>No matching found items.</p>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+</main>
+
+</body>
+</html>

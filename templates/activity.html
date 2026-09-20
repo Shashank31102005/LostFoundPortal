@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>User Activity - Lost & Found Portal</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>📋 User Activity</h1>
+
+    <p>Login and logout activity</p>
+
+</header>
+
+
+<main>
+
+    <div class="card">
+
+        <h2>🔐 Activity Log</h2>
+
+        {% if logs %}
+
+        <div style="overflow-x:auto;">
+
+            <table style="width:100%; border-collapse:collapse;">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="padding:12px; text-align:left;">
+                            User
+                        </th>
+
+                        <th style="padding:12px; text-align:left;">
+                            Email
+                        </th>
+
+                        <th style="padding:12px; text-align:left;">
+                            Activity
+                        </th>
+
+                        <th style="padding:12px; text-align:left;">
+                            Date & Time
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for log in logs %}
+
+                    <tr>
+
+                        <td style="padding:12px;">
+                            {{ log["name"] }}
+                        </td>
+
+                        <td style="padding:12px;">
+                            {{ log["email"] }}
+                        </td>
+
+                        <td style="padding:12px;">
+
+                            {% if log["activity"] == "Login" %}
+
+                                🟢 Login
+
+                            {% else %}
+
+                                🔴 Logout
+
+                            {% endif %}
+
+                        </td>
+
+                        <td style="padding:12px;">
+                            {{ log["activity_time"] }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <p style="text-align:center;">
+            No activity recorded yet.
+        </p>
+
+        {% endif %}
+
+
+        <div style="text-align:center; margin-top:30px;">
+
+            <a href="{{ url_for('dashboard') }}">
+
+                <button type="button">
+                    ← Back to Dashboard
+                </button>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

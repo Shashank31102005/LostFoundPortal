@@ -1,0 +1,420 @@
+/* ================================
+   GLOBAL
+================================ */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f7fb;
+    color: #1f2937;
+    line-height: 1.6;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+
+/* ================================
+   HEADER
+================================ */
+
+header {
+    background: linear-gradient(135deg, #172554, #2563eb);
+    color: white;
+    text-align: center;
+    padding: 45px 20px;
+}
+
+header h1 {
+    font-size: 38px;
+    margin-bottom: 8px;
+}
+
+header p {
+    font-size: 17px;
+    opacity: 0.9;
+}
+
+
+/* ================================
+   NAVIGATION
+================================ */
+
+nav {
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    flex-wrap: wrap;
+}
+
+nav a {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    transition: 0.2s;
+}
+
+nav a:hover {
+    background: #2563eb;
+    color: white;
+}
+
+
+/* ================================
+   MAIN
+================================ */
+
+main {
+    max-width: 1150px;
+    margin: auto;
+    padding: 35px 20px;
+}
+
+
+/* ================================
+   HERO
+================================ */
+
+.hero {
+    background: white;
+    border-radius: 18px;
+    padding: 65px 30px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+    margin-bottom: 35px;
+}
+
+.hero h2 {
+    font-size: 38px;
+    color: #172554;
+    margin-bottom: 15px;
+}
+
+.hero p {
+    max-width: 700px;
+    margin: auto;
+    color: #64748b;
+    font-size: 17px;
+}
+
+.hero-buttons {
+    margin-top: 28px;
+}
+
+
+/* ================================
+   BUTTONS
+================================ */
+
+button {
+    border: none;
+    background: #2563eb;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 5px;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+
+/* ================================
+   STATISTICS
+================================ */
+
+.stats-section {
+    margin-bottom: 40px;
+}
+
+.stats-section > h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #172554;
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.stat {
+    background: linear-gradient(145deg, #172554, #2563eb);
+    color: white;
+    text-align: center;
+    padding: 28px 15px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.18);
+}
+
+.stat-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.stat h3 {
+    font-size: 30px;
+    margin-bottom: 3px;
+}
+
+.stat p {
+    opacity: 0.9;
+}
+
+
+/* ================================
+   SECTION HEADINGS
+================================ */
+
+.how-section,
+.action-section,
+.search-section,
+.account-section {
+    margin-bottom: 40px;
+}
+
+.how-section > h2 {
+    text-align: center;
+    color: #172554;
+    margin-bottom: 22px;
+}
+
+
+/* ================================
+   CARD CONTAINER
+================================ */
+
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+
+/* ================================
+   CARD
+================================ */
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.card h2 {
+    color: #172554;
+    margin-bottom: 12px;
+}
+
+.card h3 {
+    color: #1e40af;
+    margin-bottom: 10px;
+}
+
+.card p {
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+
+/* ================================
+   LOST / FOUND SECTION
+================================ */
+
+.action-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.action-section .card {
+    padding: 35px;
+}
+
+.action-section .card h2 {
+    font-size: 25px;
+}
+
+
+/* ================================
+   SEARCH SECTION
+================================ */
+
+.search-section {
+    background: white;
+    text-align: center;
+    padding: 40px 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+.search-section h2 {
+    color: #172554;
+    margin-bottom: 8px;
+}
+
+.search-section p {
+    color: #64748b;
+    margin-bottom: 15px;
+}
+
+
+/* ================================
+   ACCOUNT SECTION
+================================ */
+
+.account-section {
+    background: #eff6ff;
+    text-align: center;
+    padding: 40px 20px;
+    border-radius: 16px;
+}
+
+.account-section h2 {
+    color: #172554;
+    margin-bottom: 8px;
+}
+
+.account-section p {
+    color: #64748b;
+    margin-bottom: 15px;
+}
+
+
+/* ================================
+   FORMS
+================================ */
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 5px;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+
+/* ================================
+   FOOTER
+================================ */
+
+footer {
+    background: #172554;
+    color: white;
+    text-align: center;
+    padding: 30px 20px;
+    margin-top: 30px;
+}
+
+footer p {
+    margin: 5px;
+    opacity: 0.85;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 900px) {
+
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .card-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    header h1 {
+        font-size: 28px;
+    }
+
+    .hero h2 {
+        font-size: 28px;
+    }
+
+    nav {
+        flex-direction: column;
+    }
+
+    nav a {
+        width: 100%;
+        text-align: center;
+    }
+
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+
+    .card-container {
+        grid-template-columns: 1fr;
+    }
+
+    .action-section {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-buttons {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero-buttons button {
+        width: 90%;
+    }
+
+}

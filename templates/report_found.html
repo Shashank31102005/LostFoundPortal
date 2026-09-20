@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Report Found Item - Lost & Found Portal</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>📦 Report Found Item</h1>
+
+    <p>Help the owner find their lost item.</p>
+
+</header>
+
+
+<main>
+
+    <div class="card">
+
+        <form method="POST"
+              enctype="multipart/form-data">
+
+
+            <!-- ITEM NAME -->
+
+            <label for="item_name">
+                Item Name
+            </label>
+
+            <input
+                type="text"
+                id="item_name"
+                name="item_name"
+                placeholder="Example: Black Wallet"
+                required
+            >
+
+
+            <!-- CATEGORY -->
+
+            <label for="category">
+                Category
+            </label>
+
+            <select
+                id="category"
+                name="category"
+                required
+            >
+
+                <option value="">
+                    Select Category
+                </option>
+
+                <option value="Mobile Phone">
+                    📱 Mobile Phone
+                </option>
+
+                <option value="Wallet">
+                    👛 Wallet
+                </option>
+
+                <option value="ID Card">
+                    🪪 ID Card
+                </option>
+
+                <option value="Bag">
+                    🎒 Bag
+                </option>
+
+                <option value="Books">
+                    📚 Books
+                </option>
+
+                <option value="Keys">
+                    🔑 Keys
+                </option>
+
+                <option value="Laptop">
+                    💻 Laptop
+                </option>
+
+                <option value="Other">
+                    📦 Other
+                </option>
+
+            </select>
+
+
+            <!-- DESCRIPTION -->
+
+            <label for="description">
+                Description
+            </label>
+
+            <textarea
+                id="description"
+                name="description"
+                rows="5"
+                placeholder="Describe the item, colour, brand, identifying marks, etc."
+            ></textarea>
+
+
+            <!-- LOCATION -->
+
+            <label for="location">
+                Location Found
+            </label>
+
+            <input
+                type="text"
+                id="location"
+                name="location"
+                placeholder="Example: PES College Campus"
+                required
+            >
+
+
+            <!-- DATE -->
+
+            <label for="date_found">
+                Date Found
+            </label>
+
+            <input
+                type="date"
+                id="date_found"
+                name="date_found"
+                required
+            >
+
+
+            <!-- CONTACT -->
+
+            <label for="contact">
+                Contact Information
+            </label>
+
+            <input
+                type="text"
+                id="contact"
+                name="contact"
+                placeholder="Phone number or email"
+                required
+            >
+
+
+            <!-- PHOTO -->
+
+            <label for="photo">
+                📷 Item Photo
+            </label>
+
+            <input
+                type="file"
+                id="photo"
+                name="photo"
+                accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+            >
+
+            <small>
+                Upload a clear photo of the found item.
+                Allowed: JPG, JPEG, PNG, GIF, WEBP
+            </small>
+
+
+            <!-- SUBMIT -->
+
+            <button type="submit">
+                📦 Submit Found Report
+            </button>
+
+
+            <!-- BACK -->
+
+            <a href="{{ url_for('dashboard') }}">
+
+                <button
+                    type="button"
+                    style="margin-top: 10px;"
+                >
+                    ← Back to Dashboard
+                </button>
+
+            </a>
+
+        </form>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>
