@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session
-import sqlite3
+import psycopg2
+from psycopg2.extras import DictCursor
 import os
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -27,12 +28,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 # =========================================================
-# DATABASE CONNECTION
+# DATABASE CONNECTION - POSTGRESQL
 # =========================================================
 
 def get_db():
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
+    database_url = os.environ.get("DATABASE_URL")
+
+    if not database_url:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is not set."
+        )
+
+    conn = psycopg2.connect(
+        database_url,
+        cursor_factory=DictCursor
+    )
+
     return conn
 
 
@@ -53,48 +64,54 @@ def allowed_file(filename):
 
 def init_db():
 
-    conn = sqlite3.connect("database.db")
+    conn = get_db()
+    cursor = conn.cursor()
 
     # USERS
-    conn.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 0
         )
     """)
 
     # LOST ITEMS
-    conn.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS lost_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             item_name TEXT NOT NULL,
             category TEXT NOT NULL,
             description TEXT,
             location TEXT NOT NULL,
             date_lost TEXT NOT NULL,
-            contact TEXT NOT NULL
+            contact TEXT NOT NULL,
+            user_id INTEGER,
+            photo TEXT
         )
     """)
 
     # FOUND ITEMS
-    conn.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS found_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             item_name TEXT NOT NULL,
             category TEXT NOT NULL,
             description TEXT,
             location TEXT NOT NULL,
             date_found TEXT NOT NULL,
-            contact TEXT NOT NULL
+            contact TEXT NOT NULL,
+            user_id INTEGER,
+            photo TEXT
         )
     """)
 
     # ACTIVITY LOG
-    conn.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS activity_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INTEGER,
             name TEXT NOT NULL,
             email TEXT NOT NULL,
@@ -104,63 +121,46 @@ def init_db():
     """)
 
     conn.commit()
+    cursor.close()
     conn.close()
 
 
 # =========================================================
-# ADD NEW COLUMNS TO OLD DATABASE
+# ADD NEW COLUMNS TO EXISTING POSTGRESQL DATABASE
 # =========================================================
 
 def add_columns():
 
-    conn = sqlite3.connect("database.db")
+    conn = get_db()
+    cursor = conn.cursor()
 
-    # LOST ITEMS - user_id
-    try:
-        conn.execute("""
-            ALTER TABLE lost_items
-            ADD COLUMN user_id INTEGER
-        """)
-    except sqlite3.OperationalError:
-        pass
+    cursor.execute("""
+        ALTER TABLE lost_items
+        ADD COLUMN IF NOT EXISTS user_id INTEGER
+    """)
 
-    # FOUND ITEMS - user_id
-    try:
-        conn.execute("""
-            ALTER TABLE found_items
-            ADD COLUMN user_id INTEGER
-        """)
-    except sqlite3.OperationalError:
-        pass
+    cursor.execute("""
+        ALTER TABLE lost_items
+        ADD COLUMN IF NOT EXISTS photo TEXT
+    """)
 
-    # LOST ITEMS - photo
-    try:
-        conn.execute("""
-            ALTER TABLE lost_items
-            ADD COLUMN photo TEXT
-        """)
-    except sqlite3.OperationalError:
-        pass
+    cursor.execute("""
+        ALTER TABLE found_items
+        ADD COLUMN IF NOT EXISTS user_id INTEGER
+    """)
 
-    # FOUND ITEMS - photo
-    try:
-        conn.execute("""
-            ALTER TABLE found_items
-            ADD COLUMN photo TEXT
-        """)
-    except sqlite3.OperationalError:
-        pass
+    cursor.execute("""
+        ALTER TABLE found_items
+        ADD COLUMN IF NOT EXISTS photo TEXT
+    """)
 
-    # USERS - is_admin
-    try:
-        conn.execute("""
-            ALTER TABLE users
-            ADD COLUMN is_admin INTEGER DEFAULT 0
-        """)
-    except sqlite3.OperationalError:
-        pass
+    cursor.execute("""
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS is_admin INTEGER DEFAULT 0
+    """)
 
     conn.commit()
+    cursor.close()
     conn.close()
 
 
@@ -170,30 +170,33 @@ def add_columns():
 
 def create_admin():
 
-    conn = sqlite3.connect("database.db")
+    conn = get_db()
+    cursor = conn.cursor()
 
     admin_email = "admin@lostfound.com"
 
-    admin = conn.execute("""
+    cursor.execute("""
         SELECT id
         FROM users
-        WHERE email = ?
-    """, (admin_email,)).fetchone()
+        WHERE email = %s
+    """, (admin_email,))
+
+    admin = cursor.fetchone()
 
     if admin:
 
-        conn.execute("""
+        cursor.execute("""
             UPDATE users
             SET is_admin = 1
-            WHERE email = ?
+            WHERE email = %s
         """, (admin_email,))
 
     else:
 
-        conn.execute("""
+        cursor.execute("""
             INSERT INTO users
             (name, email, password, is_admin)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         """, (
             "Administrator",
             admin_email,
@@ -202,6 +205,7 @@ def create_admin():
         ))
 
     conn.commit()
+    cursor.close()
     conn.close()
 
 
@@ -213,17 +217,21 @@ def create_admin():
 def home():
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    lost_count = conn.execute(
+    cursor.execute(
         "SELECT COUNT(*) FROM lost_items"
-    ).fetchone()[0]
+    )
+    lost_count = cursor.fetchone()[0]
 
-    found_count = conn.execute(
+    cursor.execute(
         "SELECT COUNT(*) FROM found_items"
-    ).fetchone()[0]
+    )
+    found_count = cursor.fetchone()[0]
 
     total_count = lost_count + found_count
 
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -248,13 +256,14 @@ def register():
         password = request.form["password"]
 
         conn = get_db()
+        cursor = conn.cursor()
 
         try:
 
-            conn.execute("""
+            cursor.execute("""
                 INSERT INTO users
                 (name, email, password, is_admin)
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s)
             """, (
                 name,
                 email,
@@ -264,11 +273,15 @@ def register():
 
             conn.commit()
 
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
 
+            conn.rollback()
+            cursor.close()
             conn.close()
+
             return "Email already registered."
 
+        cursor.close()
         conn.close()
 
         return redirect("/login")
@@ -289,16 +302,19 @@ def login():
         password = request.form["password"]
 
         conn = get_db()
+        cursor = conn.cursor()
 
-        user = conn.execute("""
+        cursor.execute("""
             SELECT *
             FROM users
-            WHERE email = ?
-            AND password = ?
+            WHERE email = %s
+            AND password = %s
         """, (
             email,
             password
-        )).fetchone()
+        ))
+
+        user = cursor.fetchone()
 
         if user:
 
@@ -307,11 +323,10 @@ def login():
             session["email"] = user["email"]
             session["is_admin"] = user["is_admin"]
 
-            # LOGIN ACTIVITY
-            conn.execute("""
+            cursor.execute("""
                 INSERT INTO activity_logs
                 (user_id, name, email, activity, activity_time)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s)
             """, (
                 user["id"],
                 user["name"],
@@ -321,15 +336,15 @@ def login():
             ))
 
             conn.commit()
+            cursor.close()
             conn.close()
 
-            # ADMIN → ADMIN DASHBOARD
             if user["is_admin"] == 1:
                 return redirect("/admin")
 
-            # NORMAL USER → USER DASHBOARD
             return redirect("/dashboard")
 
+        cursor.close()
         conn.close()
 
         return "Invalid email or password."
@@ -347,21 +362,24 @@ def logout():
     if "user_id" in session:
 
         conn = get_db()
+        cursor = conn.cursor()
 
-        user = conn.execute("""
+        cursor.execute("""
             SELECT id, name, email
             FROM users
-            WHERE id = ?
+            WHERE id = %s
         """, (
             session["user_id"],
-        )).fetchone()
+        ))
+
+        user = cursor.fetchone()
 
         if user:
 
-            conn.execute("""
+            cursor.execute("""
                 INSERT INTO activity_logs
                 (user_id, name, email, activity, activity_time)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s)
             """, (
                 user["id"],
                 user["name"],
@@ -372,6 +390,7 @@ def logout():
 
             conn.commit()
 
+        cursor.close()
         conn.close()
 
     session.clear()
@@ -390,38 +409,45 @@ def admin_dashboard():
         return redirect("/login")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    user = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM users
-        WHERE id = ?
+        WHERE id = %s
     """, (
         session["user_id"],
-    )).fetchone()
+    ))
 
-    # Only admin can access
+    user = cursor.fetchone()
+
     if not user or user["is_admin"] != 1:
 
+        cursor.close()
         conn.close()
         return redirect("/dashboard")
 
-    # Statistics
-    user_count = conn.execute(
+    cursor.execute(
         "SELECT COUNT(*) FROM users WHERE is_admin = 0"
-    ).fetchone()[0]
+    )
+    user_count = cursor.fetchone()[0]
 
-    lost_count = conn.execute(
+    cursor.execute(
         "SELECT COUNT(*) FROM lost_items"
-    ).fetchone()[0]
+    )
+    lost_count = cursor.fetchone()[0]
 
-    found_count = conn.execute(
+    cursor.execute(
         "SELECT COUNT(*) FROM found_items"
-    ).fetchone()[0]
+    )
+    found_count = cursor.fetchone()[0]
 
-    activity_count = conn.execute(
+    cursor.execute(
         "SELECT COUNT(*) FROM activity_logs"
-    ).fetchone()[0]
+    )
+    activity_count = cursor.fetchone()[0]
 
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -445,30 +471,35 @@ def dashboard():
     if "user_id" not in session:
         return redirect("/login")
 
-    # Admin should use admin dashboard
     if session.get("is_admin") == 1:
         return redirect("/admin")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    lost_items = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM lost_items
-        WHERE user_id = ?
+        WHERE user_id = %s
         ORDER BY id DESC
     """, (
         session["user_id"],
-    )).fetchall()
+    ))
 
-    found_items = conn.execute("""
+    lost_items = cursor.fetchall()
+
+    cursor.execute("""
         SELECT *
         FROM found_items
-        WHERE user_id = ?
+        WHERE user_id = %s
         ORDER BY id DESC
     """, (
         session["user_id"],
-    )).fetchall()
+    ))
 
+    found_items = cursor.fetchall()
+
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -524,8 +555,9 @@ def report_lost():
                 )
 
         conn = get_db()
+        cursor = conn.cursor()
 
-        conn.execute("""
+        cursor.execute("""
             INSERT INTO lost_items
             (
                 user_id,
@@ -537,7 +569,7 @@ def report_lost():
                 contact,
                 photo
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             session["user_id"],
             item_name,
@@ -550,6 +582,7 @@ def report_lost():
         ))
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         return redirect("/dashboard")
@@ -600,8 +633,9 @@ def report_found():
                 )
 
         conn = get_db()
+        cursor = conn.cursor()
 
-        conn.execute("""
+        cursor.execute("""
             INSERT INTO found_items
             (
                 user_id,
@@ -613,7 +647,7 @@ def report_found():
                 contact,
                 photo
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             session["user_id"],
             item_name,
@@ -626,6 +660,7 @@ def report_found():
         ))
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         return redirect("/dashboard")
@@ -641,13 +676,17 @@ def report_found():
 def lost_items():
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    items = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM lost_items
         ORDER BY id DESC
-    """).fetchall()
+    """)
 
+    items = cursor.fetchall()
+
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -664,13 +703,17 @@ def lost_items():
 def found_items():
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    items = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM found_items
         ORDER BY id DESC
-    """).fetchall()
+    """)
 
+    items = cursor.fetchall()
+
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -689,46 +732,52 @@ def search():
     query = request.args.get("q", "").strip()
 
     conn = get_db()
+    cursor = conn.cursor()
 
     if query:
 
         search_value = f"%{query}%"
 
-        lost_items = conn.execute("""
+        cursor.execute("""
             SELECT *
             FROM lost_items
-            WHERE item_name LIKE ?
-               OR category LIKE ?
-               OR location LIKE ?
-               OR description LIKE ?
+            WHERE item_name ILIKE %s
+               OR category ILIKE %s
+               OR location ILIKE %s
+               OR description ILIKE %s
             ORDER BY id DESC
         """, (
             search_value,
             search_value,
             search_value,
             search_value
-        )).fetchall()
+        ))
 
-        found_items = conn.execute("""
+        lost_items = cursor.fetchall()
+
+        cursor.execute("""
             SELECT *
             FROM found_items
-            WHERE item_name LIKE ?
-               OR category LIKE ?
-               OR location LIKE ?
-               OR description LIKE ?
+            WHERE item_name ILIKE %s
+               OR category ILIKE %s
+               OR location ILIKE %s
+               OR description ILIKE %s
             ORDER BY id DESC
         """, (
             search_value,
             search_value,
             search_value,
             search_value
-        )).fetchall()
+        ))
+
+        found_items = cursor.fetchall()
 
     else:
 
         lost_items = []
         found_items = []
 
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -750,34 +799,38 @@ def edit_lost(item_id):
         return redirect("/login")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    item = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM lost_items
-        WHERE id = ?
-        AND user_id = ?
+        WHERE id = %s
+        AND user_id = %s
     """, (
         item_id,
         session["user_id"]
-    )).fetchone()
+    ))
+
+    item = cursor.fetchone()
 
     if item is None:
 
+        cursor.close()
         conn.close()
         return "Report not found or you don't have permission to edit it."
 
     if request.method == "POST":
 
-        conn.execute("""
+        cursor.execute("""
             UPDATE lost_items
-            SET item_name = ?,
-                category = ?,
-                description = ?,
-                location = ?,
-                date_lost = ?,
-                contact = ?
-            WHERE id = ?
-            AND user_id = ?
+            SET item_name = %s,
+                category = %s,
+                description = %s,
+                location = %s,
+                date_lost = %s,
+                contact = %s
+            WHERE id = %s
+            AND user_id = %s
         """, (
             request.form["item_name"],
             request.form["category"],
@@ -790,10 +843,12 @@ def edit_lost(item_id):
         ))
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         return redirect("/dashboard")
 
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -813,16 +868,19 @@ def delete_lost(item_id):
         return redirect("/login")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    item = conn.execute("""
+    cursor.execute("""
         SELECT photo
         FROM lost_items
-        WHERE id = ?
-        AND user_id = ?
+        WHERE id = %s
+        AND user_id = %s
     """, (
         item_id,
         session["user_id"]
-    )).fetchone()
+    ))
+
+    item = cursor.fetchone()
 
     if item:
 
@@ -836,16 +894,17 @@ def delete_lost(item_id):
             if os.path.exists(photo_path):
                 os.remove(photo_path)
 
-        conn.execute("""
+        cursor.execute("""
             DELETE FROM lost_items
-            WHERE id = ?
-            AND user_id = ?
+            WHERE id = %s
+            AND user_id = %s
         """, (
             item_id,
             session["user_id"]
         ))
 
     conn.commit()
+    cursor.close()
     conn.close()
 
     return redirect("/dashboard")
@@ -862,34 +921,38 @@ def edit_found(item_id):
         return redirect("/login")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    item = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM found_items
-        WHERE id = ?
-        AND user_id = ?
+        WHERE id = %s
+        AND user_id = %s
     """, (
         item_id,
         session["user_id"]
-    )).fetchone()
+    ))
+
+    item = cursor.fetchone()
 
     if item is None:
 
+        cursor.close()
         conn.close()
         return "Report not found or you don't have permission to edit it."
 
     if request.method == "POST":
 
-        conn.execute("""
+        cursor.execute("""
             UPDATE found_items
-            SET item_name = ?,
-                category = ?,
-                description = ?,
-                location = ?,
-                date_found = ?,
-                contact = ?
-            WHERE id = ?
-            AND user_id = ?
+            SET item_name = %s,
+                category = %s,
+                description = %s,
+                location = %s,
+                date_found = %s,
+                contact = %s
+            WHERE id = %s
+            AND user_id = %s
         """, (
             request.form["item_name"],
             request.form["category"],
@@ -902,10 +965,12 @@ def edit_found(item_id):
         ))
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         return redirect("/dashboard")
 
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -925,16 +990,19 @@ def delete_found(item_id):
         return redirect("/login")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    item = conn.execute("""
+    cursor.execute("""
         SELECT photo
         FROM found_items
-        WHERE id = ?
-        AND user_id = ?
+        WHERE id = %s
+        AND user_id = %s
     """, (
         item_id,
         session["user_id"]
-    )).fetchone()
+    ))
+
+    item = cursor.fetchone()
 
     if item:
 
@@ -948,16 +1016,17 @@ def delete_found(item_id):
             if os.path.exists(photo_path):
                 os.remove(photo_path)
 
-        conn.execute("""
+        cursor.execute("""
             DELETE FROM found_items
-            WHERE id = ?
-            AND user_id = ?
+            WHERE id = %s
+            AND user_id = %s
         """, (
             item_id,
             session["user_id"]
         ))
 
     conn.commit()
+    cursor.close()
     conn.close()
 
     return redirect("/dashboard")
@@ -974,33 +1043,38 @@ def matches():
         return redirect("/login")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    lost_items = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM lost_items
-        WHERE user_id = ?
+        WHERE user_id = %s
         ORDER BY id DESC
     """, (
         session["user_id"],
-    )).fetchall()
+    ))
+
+    lost_items = cursor.fetchall()
 
     matches = []
 
     for lost in lost_items:
 
-        found_items = conn.execute("""
+        cursor.execute("""
             SELECT *
             FROM found_items
             WHERE
-                LOWER(item_name) LIKE ?
-                OR LOWER(category) LIKE ?
-                OR LOWER(location) LIKE ?
+                LOWER(item_name) LIKE %s
+                OR LOWER(category) LIKE %s
+                OR LOWER(location) LIKE %s
             ORDER BY id DESC
         """, (
             f"%{lost['item_name'].lower()}%",
             f"%{lost['category'].lower()}%",
             f"%{lost['location'].lower()}%"
-        )).fetchall()
+        ))
+
+        found_items = cursor.fetchall()
 
         for found in found_items:
 
@@ -1009,6 +1083,7 @@ def matches():
                 "found": found
             })
 
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -1028,27 +1103,33 @@ def activity():
         return redirect("/login")
 
     conn = get_db()
+    cursor = conn.cursor()
 
-    user = conn.execute("""
+    cursor.execute("""
         SELECT is_admin
         FROM users
-        WHERE id = ?
+        WHERE id = %s
     """, (
         session["user_id"],
-    )).fetchone()
+    ))
 
-    # Normal users cannot access activity
+    user = cursor.fetchone()
+
     if not user or user["is_admin"] != 1:
 
+        cursor.close()
         conn.close()
         return redirect("/dashboard")
 
-    logs = conn.execute("""
+    cursor.execute("""
         SELECT *
         FROM activity_logs
         ORDER BY id DESC
-    """).fetchall()
+    """)
 
+    logs = cursor.fetchall()
+
+    cursor.close()
     conn.close()
 
     return render_template(
@@ -1058,17 +1139,14 @@ def activity():
 
 
 # =========================================================
-# INITIALIZE DATABASE
-# =========================================================
-
-init_db()
-add_columns()
-create_admin()
-
-
-# =========================================================
 # START APPLICATION
 # =========================================================
+
+if os.environ.get("DATABASE_URL"):
+    init_db()
+    add_columns()
+    create_admin()
+
 
 if __name__ == "__main__":
     app.run(debug=True)
